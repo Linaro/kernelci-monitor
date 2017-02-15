@@ -4,3 +4,4 @@ django-celery==3.2.1
 pytz==2016.10
 PyYAML==3.12
 requests==2.13.0
+gunicorn
