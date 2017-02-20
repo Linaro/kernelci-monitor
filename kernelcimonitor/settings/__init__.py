@@ -145,6 +145,8 @@ CELERYD_LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 CELERYD_TASK_LOG_FORMAT = '[%(asctime)s] %(levelname)s %(task_name)s: %(message)s'
 CELERY_TIMEZONE = 'UTC'
 CELERY_IMPORTS = ("monitor.tasks", )
+CELERY_QUEUE_NAME = "kernelci"
+CELERY_ROUTES = {"monitor.tasks.*": {"queue": CELERY_QUEUE_NAME}}
 
 KERNELCI_TOKEN="super-secret-token"
 KERNELCI_URL="https://kernelci.org/"
