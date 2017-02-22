@@ -134,7 +134,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Celery settings
-BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+BROKER_URL = 'amqp://kernelci:kernelci@localhost:5672//kernelci'
 
 CELERY_RESULT_BACKEND = 'rpc://'
 CELERY_RESULT_PERSISTENT = False
@@ -145,7 +145,6 @@ CELERYD_LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 CELERYD_TASK_LOG_FORMAT = '[%(asctime)s] %(levelname)s %(task_name)s: %(message)s'
 CELERY_TIMEZONE = 'UTC'
 CELERY_IMPORTS = ("monitor.tasks", )
-CELERY_DEFAULT_QUEUE = 'kernelci'
 
 KERNELCI_TOKEN="super-secret-token"
 KERNELCI_URL="https://kernelci.org/"
