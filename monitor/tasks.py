@@ -115,88 +115,92 @@ class LAVADefinition(object):
         self.actions.append(action)
 
 
-def _get_boots(build_id, board):
-    boots = kernelci("boots", build_id=build_id, status="PASS", board=board)['result']
-    if boots:
-        return [(a['_id']['$oid'], a['board'], a['dtb']) for a in boots]
+def _get_build(build_id):
+    builds = kernelci("build", _id=build_id, field="dirname")['result']
+    if builds and len(builds) == 1:
+        return builds[0] # there should be only one
     return []
 
 @celery_app.task(bind=True)
 def monitor_boots(self):
-    arches = Board.objects.all().values_list('arch', flat=True)
-    arches = set(arches)
-    logger.debug(arches)
-    for arch in arches:
-        # create a celery job for each arch
-        kernelci_pull.delay(arch)
+    boards = Board.objects.all()
+    jobs = KernelCIJob.objects.all()
+
+    # TODO: do we want to check all boards for all jobs?
+    # TODO: is there a better way of querying (list multiple boards?)
+    for job in jobs:
+        for board in boards:
+            results_res = kernelci(
+                "boot",
+                date_range=settings.KERNELCI_DATE_RANGE,
+                job=job.name,
+                git_branch=job.branch,
+                board=board.kernelciname,
+                status='PASS')
+            if not 'result' in results_res.keys():
+                logger.warning("Result not found in response")
+                logger.warning(results_res)
+                continue
+            results = results_res['result']
+            for result in results:
+                kernelci_pull.delay(job.id, board.id, result)
 
 @celery_app.task(bind=True)
-def kernelci_pull(self, arch):
+def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
+    kernelcijob = KernelCIJob.objects.get(pk=kernelcijob_id)
+    kernelciboard = Board.objects.get(pk=kernelciboard_id)
 
-    jobs = KernelCIJob.objects.all()
-    for job in jobs:
-        results = kernelci(
-            "build",
-            date_range=settings.KERNELCI_DATE_RANGE,
-            job=job.name,
-            arch=arch,
-            git_branch=job.branch)['result']
+    logger.debug(boot)
+    build_id = boot['build_id']['$oid']
+    build = _get_build(build_id)
+    boot_id = boot['_id']['$oid']
+    board = boot['board']
+    dtb = boot['dtb']
+    timestamp = datetime.fromtimestamp(boot['created_on']['$date'] / 1000)
+    created_at = timezone.make_aware(timestamp, pytz.UTC)
 
-        for build in results:
-            build_id = build['_id']['$oid']
-            boards = Board.objects.filter(arch=arch)
-            logger.debug("checking build %s from %s(%s)" % (build_id, job.name, job.branch))
-            for kernelciboard in boards:
-                logger.debug("getting boot reports for board: %s" % kernelciboard)
-                items = _get_boots(build_id, kernelciboard.kernelciname)
-                logger.debug("received %s successful boot report(s)" % len(items))
-                for boot_id, board, dtb in items:
+    tree = boot['job']
+    branch = boot['git_branch']
+    kernel = boot['kernel']
+    defconfig = boot['defconfig_full']
+    arch = boot['arch']
+    job = boot['job']
 
-                    timestamp = datetime.fromtimestamp(build['created_on']['$date'] / 1000)
-                    created_at = timezone.make_aware(timestamp, pytz.UTC)
-                    #created_at = timestamp
+    directory = "/var/www/images/kernel-ci/"
 
-                    tree = build['job']
-                    branch = build['git_branch']
-                    kernel = build['kernel']
-                    defconfig = build['defconfig']
-                    arch = build['arch']
+    dtb_url = urljoin(settings.KERNELCI_STORAGE_URL,
+                      "%s/%s" % (build['dirname'].replace(directory, ""),
+                                 dtb))
 
-                    directory = "/var/www/images/kernel-ci/"
+    image_url = urljoin(settings.KERNELCI_STORAGE_URL,
+                        "%s/%s" % (build['dirname'].replace(directory, ""),
+                                   boot['kernel_image']))
 
-                    dtb_url = urljoin(settings.KERNELCI_STORAGE_URL,
-                                      "%s/%s" % (build['dirname'].replace(directory, ""),
-                                                 dtb))
-
-                    image_url = urljoin(settings.KERNELCI_STORAGE_URL,
-                                        "%s/%s" % (build['dirname'].replace(directory, ""),
-                                                   build['kernel_image']))
-
-                    kernelci_boot_url = urljoin(settings.KERNELCI_URL, "boot/id/%s" % (boot_id))
-                    kernelci_build_url = urljoin(settings.KERNELCI_URL, "build/id/%s" % (build_id))
-                    logger.info((build_id, board, tree, branch, kernel, defconfig, arch, dtb_url, image_url))
-                    metadata = {
-                        'build_id': build_id,
-                        'boot_id': boot_id,
-                        'board': board,
-                        'job': job,
-                        'tree': tree,
-                        'branch': branch,
-                        'kernel': kernel,
-                        'defconfig': defconfig,
-                        'arch': arch,
-                        'dtb_url': dtb_url,
-                        'image_url': image_url,
-                        'kernelci_build_url': kernelci_build_url,
-                        'kernelci_boot_url': kernelci_boot_url
-                    }
-                    logger.debug("creating test job with the following parameters:")
-                    logger.debug(kernelciboard)
-                    logger.debug(yaml.dump(metadata, default_flow_style=False))
-                    # comment for testing
-                    testjobs_automatic_create.delay(kernelciboard, metadata)
-                    # uncomment for testing
-                    #testjobs_automatic_create.run(kernelciboard, metadata)
+    kernelci_boot_url = urljoin(settings.KERNELCI_URL, "boot/id/%s" % (boot_id))
+    kernelci_build_url = urljoin(settings.KERNELCI_URL, "build/id/%s" % (build_id))
+    logger.info((build_id, board, tree, branch, kernel, defconfig, arch, dtb_url, image_url))
+    metadata = {
+        'build_id': build_id,
+        'boot_id': boot_id,
+        'board': board,
+        'job': kernelcijob,
+        'tree': tree,
+        'branch': branch,
+        'kernel': kernel,
+        'defconfig': defconfig,
+        'arch': arch,
+        'dtb_url': dtb_url,
+        'image_url': image_url,
+        'kernelci_build_url': kernelci_build_url,
+        'kernelci_boot_url': kernelci_boot_url
+    }
+    logger.debug("creating test job with the following parameters:")
+    logger.debug(kernelciboard)
+    logger.debug(yaml.dump(metadata, default_flow_style=False))
+    # comment for testing
+    testjobs_automatic_create.delay(kernelciboard, metadata)
+    # uncomment for testing
+    #testjobs_automatic_create.run(kernelciboard, metadata)
 
 
 def _create_test_template(board, test, metadata):
