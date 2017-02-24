@@ -19,7 +19,6 @@
 import requests
 
 from django.conf import settings
-
 headers = {"Authorization": settings.KERNELCI_TOKEN}
 
 defaults = {
@@ -45,9 +44,13 @@ def kernelci(handler, **kwargs):
 
 # for test purposes only. Not in use for the django application
 if __name__ == '__main__':
-    job = 'lsk'
-    arch = 'arm'
-    branch = 'local/linux-linaro-lsk-v4.4'
-    r = kernelci("build", date_range=10, job=job, arch=arch, git_branch=branch)['result']
+    from pprint import pprint
+    job = 'stable-rc'
+    arch = 'arm64'
+    branch = 'local/linux-4.4.y'
+    board = 'apm-mustang'
+    r = kernelci("boot", status='PASS', date_range=3, job=job, arch=arch, git_branch=branch, board=board)['result']
     for res in r:
-        print (res['git_branch'])
+        pprint (res)
+        build_res = kernelci("build", _id=res['build_id']['$oid'], field="dirname")
+        pprint (build_res)
