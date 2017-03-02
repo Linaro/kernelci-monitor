@@ -161,6 +161,7 @@ def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
 
     tree = boot['job']
     branch = boot['git_branch']
+    commit = boot['git_commit']
     kernel = boot['kernel']
     defconfig = boot['defconfig_full']
     arch = boot['arch']
@@ -186,6 +187,7 @@ def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
         'job': kernelcijob,
         'tree': tree,
         'branch': branch,
+        'commit': commit,
         'kernel': kernel,
         'defconfig': defconfig,
         'arch': arch,
@@ -249,9 +251,13 @@ def _submit_to_lava(testjobtemplate):
 
 
 def _notify_squadlistener(testjob, metadata):
-    squad_project = metadata['job'].squad_project_name
+    squad_project = "%s/%s" % (metadata['job'].squad_project_name, metadata['commit'])
     lava_server = urlsplit(settings.LAVA_XMLRPC_URL)
     headers = {"Authorization": "Token %s" % settings.SQUADLISTENER_TOKEN}
+    logger.debug("lava_server %s://%s" % (lava_server.scheme, lava_server.netloc))
+    logger.debug("lava_job_id %s" % testjob)
+    logger.debug("build_job_name %s" % squad_project)
+    logger.debug("build_job_url %s" % metadata['kernelci_build_url'])
     r = requests.post(settings.SQUADLISTENER_API_URL,
                       headers=headers,
                       json={"lava_server": "%s://%s" % (lava_server.scheme, lava_server.netloc),
