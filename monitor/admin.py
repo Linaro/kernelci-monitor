@@ -26,7 +26,7 @@ class KernelCIJobAdmin(admin.ModelAdmin):
 
 
 class BoardAdmin(admin.ModelAdmin):
-    list_display = ('kernelciname', 'lavaname', 'arch', 'enabled')
+    list_display = ('kernelciname', 'lavaname', 'defconfigs', 'arch', 'enabled')
     pass
 
 
