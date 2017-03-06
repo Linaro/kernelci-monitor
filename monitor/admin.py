@@ -21,10 +21,12 @@ from monitor.models import *
 
 
 class KernelCIJobAdmin(admin.ModelAdmin):
+    list_display = ('name', 'branch', 'enabled')
     pass
 
 
 class BoardAdmin(admin.ModelAdmin):
+    list_display = ('kernelciname', 'lavaname', 'arch', 'enabled')
     pass
 
 
