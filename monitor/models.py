@@ -34,6 +34,7 @@ class Board(models.Model):
     enabled = models.BooleanField(default=True)
     kernelciname = models.CharField(max_length=64)
     lavaname = models.CharField(max_length=64)
+    defconfiglist = models.CharField(max_length=1024, default='')
     ARM = 'arm'
     ARM64 = 'arm64'
     X86 = 'x86'
@@ -52,6 +53,10 @@ class Board(models.Model):
 
     def __str__(self):
         return "%s (%s)" % (self.kernelciname, self.arch)
+
+    @property
+    def defconfigs(self):
+        return self.defconfiglist.split()
 
 
 class TestTemplate(models.Model):
