@@ -124,7 +124,7 @@ def _get_build(build_id):
 @celery_app.task(bind=True)
 def monitor_boots(self):
     boards = Board.objects.filter(enabled=True)
-    jobs = KernelCIJob.objects.all(enabled=True)
+    jobs = KernelCIJob.objects.filter(enabled=True)
 
     # TODO: do we want to check all boards for all jobs?
     # TODO: is there a better way of querying (list multiple boards?)
