@@ -130,20 +130,25 @@ def monitor_boots(self):
     # TODO: is there a better way of querying (list multiple boards?)
     for job in jobs:
         for board in boards:
-            results_res = kernelci(
-                "boot",
-                date_range=settings.KERNELCI_DATE_RANGE,
-                job=job.name,
-                git_branch=job.branch,
-                board=board.kernelciname,
-                status='PASS')
-            if not 'result' in results_res.keys():
-                logger.warning("Result not found in response")
-                logger.warning(results_res)
-                continue
-            results = results_res['result']
-            for result in results:
-                kernelci_pull.delay(job.id, board.id, result)
+            fetch_boots(job, board)
+
+
+def fetch_boots(job, board):
+    results_res = kernelci(
+        "boot",
+        date_range=settings.KERNELCI_DATE_RANGE,
+        job=job.name,
+        git_branch=job.branch,
+        board=board.kernelciname,
+        status='PASS')
+    if not 'result' in results_res.keys():
+        logger.warning("Result not found in response")
+        logger.warning(results_res)
+        return
+    results = results_res['result']
+    for result in results:
+        kernelci_pull.delay(job.id, board.id, result)
+
 
 @celery_app.task(bind=True)
 def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
