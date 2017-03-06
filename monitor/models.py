@@ -20,6 +20,7 @@ from django.db import models
 
 
 class KernelCIJob(models.Model):
+    enabled = models.BooleanField(default=True)
     name = models.CharField(max_length=64)
     branch = models.CharField(max_length=128)
     squad_project_name = models.CharField(max_length=128)
@@ -30,6 +31,7 @@ class KernelCIJob(models.Model):
 
 
 class Board(models.Model):
+    enabled = models.BooleanField(default=True)
     kernelciname = models.CharField(max_length=64)
     lavaname = models.CharField(max_length=64)
     ARM = 'arm'
