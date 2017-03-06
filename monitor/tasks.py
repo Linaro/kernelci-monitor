@@ -127,20 +127,22 @@ def monitor_boots(self):
 
 
 def fetch_boots(job, board):
-    results_res = kernelci(
-        "boot",
-        date_range=settings.KERNELCI_DATE_RANGE,
-        job=job.name,
-        git_branch=job.branch,
-        board=board.kernelciname,
-        status='PASS')
-    if not 'result' in results_res.keys():
-        logger.warning("Result not found in response")
-        logger.warning(results_res)
-        return
-    results = results_res['result']
-    for result in results:
-        kernelci_pull.delay(job.id, board.id, result)
+    for defconfig in board.defconfigs:
+        results_res = kernelci(
+            "boot",
+            date_range=settings.KERNELCI_DATE_RANGE,
+            job=job.name,
+            git_branch=job.branch,
+            board=board.kernelciname,
+            defconfig_full=defconfig,
+            status='PASS')
+        if not 'result' in results_res.keys():
+            logger.warning("Result not found in response")
+            logger.warning(results_res)
+            return
+        results = results_res['result']
+        for result in results:
+            kernelci_pull.delay(job.id, board.id, result)
 
 
 @celery_app.task(bind=True)
