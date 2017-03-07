@@ -84,3 +84,12 @@ class TestTemplate(models.Model):
         # add parameters
 
         return {"test": test_dict}
+
+
+class SeenBuild(models.Model):
+    # git will eventually move away from SHA1, so 40 is not enough
+    gitcommit = models.CharField(max_length=128)
+    board = models.ForeignKey(Board, related_name='seen_builds')
+
+    class Meta:
+        unique_together = ('board', 'gitcommit')

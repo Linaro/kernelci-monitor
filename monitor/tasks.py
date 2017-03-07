@@ -29,7 +29,7 @@ from django.utils import timezone
 
 from kernelcimonitor import celery_app
 from monitor.kernelci import kernelci
-from monitor.models import Board, KernelCIJob, TestTemplate
+from monitor.models import Board, KernelCIJob, TestTemplate, SeenBuild
 
 logger = logging.getLogger("tasks")
 
@@ -270,10 +270,14 @@ def _notify_squadlistener(testjob, metadata):
 def testjobs_automatic_create(self, board_id, metadata):
     board = Board.objects.get(pk=board_id)
 
+    if SeenBuild.objects.filter(board=board, gitcommit=metadata['commit']).exists():
+        return
+
     for test in TestTemplate.objects.all():
         testjobtemplate = _create_test_template(board, test, metadata)
         test_job_id = _submit_to_lava(testjobtemplate)
         _notify_squadlistener(test_job_id, metadata)
 
+        SeenBuild.objects.create(board=board, gitcommit=metadata['commit'])
         logger.info("TestJob %s deployed" % (test_job_id))
 
