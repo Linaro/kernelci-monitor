@@ -200,7 +200,7 @@ def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
     logger.debug(kernelciboard)
     logger.debug(yaml.dump(metadata, default_flow_style=False))
     # comment for testing
-    testjobs_automatic_create.delay(kernelciboard, metadata)
+    testjobs_automatic_create.delay(kernelciboard.id, metadata)
     # uncomment for testing
     #testjobs_automatic_create.run(kernelciboard, metadata)
 
@@ -267,7 +267,8 @@ def _notify_squadlistener(testjob, metadata):
 
 
 @celery_app.task(bind=True)
-def testjobs_automatic_create(self, board, metadata):
+def testjobs_automatic_create(self, board_id, metadata):
+    board = Board.objects.get(pk=board_id)
 
     for test in TestTemplate.objects.all():
         testjobtemplate = _create_test_template(board, test, metadata)
