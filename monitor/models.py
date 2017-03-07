@@ -34,7 +34,7 @@ class Board(models.Model):
     enabled = models.BooleanField(default=True)
     kernelciname = models.CharField(max_length=64)
     lavaname = models.CharField(max_length=64)
-    defconfiglist = models.CharField(max_length=1024, default='')
+    defconfiglist = models.CharField(max_length=1024, default='', blank=True)
     ARM = 'arm'
     ARM64 = 'arm64'
     X86 = 'x86'
