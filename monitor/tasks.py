@@ -278,6 +278,7 @@ def testjobs_automatic_create(self, board_id, metadata):
         test_job_id = _submit_to_lava(testjobtemplate)
         _notify_squadlistener(test_job_id, metadata)
 
-        SeenBuild.objects.create(board=board, gitcommit=metadata['commit'])
         logger.info("TestJob %s deployed" % (test_job_id))
+
+    SeenBuild.objects.create(board=board, gitcommit=metadata['commit'])
 
