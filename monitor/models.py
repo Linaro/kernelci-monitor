@@ -59,6 +59,12 @@ class Board(models.Model):
         return self.defconfiglist.split()
 
 
+class LastChecked(models.Model):
+    kernelcijob = models.ForeignKey(KernelCIJob)
+    kernelciboard = models.ForeignKey(Board)
+    last_update = models.DateTimeField(auto_now=True)
+
+
 class TestTemplate(models.Model):
     name = models.CharField(max_length=32)
     gitrepo = models.CharField(max_length=1024)

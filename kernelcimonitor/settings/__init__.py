@@ -150,7 +150,6 @@ KERNELCI_TOKEN="super-secret-token"
 KERNELCI_URL="https://kernelci.org/"
 KERNELCI_API_URL="https://api.kernelci.org/%s/"
 KERNELCI_STORAGE_URL="https://storage.kernelci.org/"
-KERNELCI_DATE_RANGE=1
 
 LAVA_XMLRPC_URL="https://staging.validation.linaro.org/RPC2/"
 LAVA_USERNAME="lava-user"
