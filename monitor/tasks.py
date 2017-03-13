@@ -29,7 +29,7 @@ from django.utils import timezone
 
 from kernelcimonitor import celery_app
 from monitor.kernelci import kernelci
-from monitor.models import Board, KernelCIJob, TestTemplate, SeenBuild
+from monitor.models import Board, KernelCIJob, TestTemplate, SeenBuild, LastChecked
 
 logger = logging.getLogger("tasks")
 
@@ -127,10 +127,24 @@ def monitor_boots(self):
 
 
 def fetch_boots(job, board):
+    last_checked, created = LastChecked.objects.get_or_create(
+        kernelcijob=job,
+        kernelciboard=board)
+
+    time_range = 24*60 # time_range in minutes. Get initial data for last 24h
+    if not created:
+        time_range_delta = timezone.now() - last_checked.last_update
+        time_range = int(round(time_range_delta.total_seconds() / 60, 0))
+        last_checked.save() # this should update last_update field
+    logger.debug("Using time_range: %s" % time_range)
+    if time_range < 10:
+        logger.info("Shortest time_range is 10 min")
+        logger.info("Received time_range: %s" % time_range)
+        return
     for defconfig in board.defconfigs:
         results_res = kernelci(
             "boot",
-            date_range=settings.KERNELCI_DATE_RANGE,
+            time_range=time_range,
             job=job.name,
             git_branch=job.branch,
             board=board.kernelciname,
