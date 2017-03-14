@@ -27,6 +27,7 @@ defaults = {
     "sort": "created_on"
 }
 
+
 def kernelci(handler, **kwargs):
 
     url = settings.KERNELCI_API_URL % handler
@@ -51,6 +52,6 @@ if __name__ == '__main__':
     board = 'apm-mustang'
     r = kernelci("boot", status='PASS', date_range=3, job=job, arch=arch, git_branch=branch, board=board)['result']
     for res in r:
-        pprint (res)
+        pprint(res)
         build_res = kernelci("build", _id=res['build_id']['$oid'], field="dirname")
-        pprint (build_res)
+        pprint(build_res)

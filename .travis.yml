@@ -5,8 +5,17 @@ env:
   - DJANGO=1.10
 install:
   - pip install -r requirements.txt
-  - pip install pep8 --use-mirrors
+  - pip install pep8
 before_script:
-  - "pep8 --exclude=migrations --ignore=E501,E225 src"
+  - "pep8 --exclude=migrations --ignore=E501,E225 monitor"
 script:
-  - python setup.py test -v 3
+  - python manage.py test -v 3
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+  irc:
+    on_success: change
+    on_failure: change
+    channels:
+      - "chat.freenode.net#linaro-qa"

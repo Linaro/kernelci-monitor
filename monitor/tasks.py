@@ -56,8 +56,10 @@ http_client.HTTPConnection.debuglevel = 1
 class LAVADefinitionException(Exception):
     pass
 
+
 class LAVAResponseException(Exception):
     pass
+
 
 class LAVADefinition(object):
 
@@ -111,8 +113,9 @@ class LAVADefinition(object):
 def _get_build(build_id):
     builds = kernelci("build", _id=build_id, field="dirname")['result']
     if builds and len(builds) == 1:
-        return builds[0] # there should be only one
+        return builds[0]  # there should be only one
     return []
+
 
 @celery_app.task(bind=True)
 def monitor_boots(self):
@@ -131,11 +134,11 @@ def fetch_boots(job, board):
         kernelcijob=job,
         kernelciboard=board)
 
-    time_range = 24*60 # time_range in minutes. Get initial data for last 24h
+    time_range = 24 * 60  # time_range in minutes. Get initial data for last 24h
     if not created:
         time_range_delta = timezone.now() - last_checked.last_update
         time_range = int(round(time_range_delta.total_seconds() / 60, 0))
-        last_checked.save() # this should update last_update field
+        last_checked.save()  # this should update last_update field
     logger.debug("Using time_range: %s" % time_range)
     if time_range < 10:
         logger.info("Shortest time_range is 10 min")
@@ -150,7 +153,7 @@ def fetch_boots(job, board):
             board=board.kernelciname,
             defconfig_full=defconfig,
             status='PASS')
-        if not 'result' in results_res.keys():
+        if 'result' not in results_res.keys():
             logger.warning("Result not found in response")
             logger.warning(results_res)
             return
@@ -213,10 +216,7 @@ def kernelci_pull(self, kernelcijob_id, kernelciboard_id, boot):
     logger.debug("creating test job with the following parameters:")
     logger.debug(kernelciboard)
     logger.debug(yaml.dump(metadata, default_flow_style=False))
-    # comment for testing
     testjobs_automatic_create.delay(kernelciboard.id, metadata)
-    # uncomment for testing
-    #testjobs_automatic_create.run(kernelciboard, metadata)
 
 
 def _create_test_template(board, test, metadata):
@@ -224,11 +224,9 @@ def _create_test_template(board, test, metadata):
     lava_definition.device_type = board.lavaname
     lava_definition.job_name = "%s-%s-%s" % (metadata['kernel'], board.kernelciname, test.name)
     deploy_str = Template(board.deploytemplate)
-    #deploy_str.substitute(metadata)
     deploy = yaml.load(deploy_str.substitute(metadata))
     lava_definition.add_action(deploy)
     boot_str = Template(board.boottemplate)
-    #boot_str.substitute(metadata)
     boot = yaml.load(boot_str.substitute(metadata))
     lava_definition.add_action(boot)
     lava_definition.add_action(test.lava_template())
@@ -240,11 +238,11 @@ def _call_xmlrpc(method_name, *method_params):
 
     logger.debug(settings.LAVA_XMLRPC_URL)
     response = requests.request('POST', settings.LAVA_XMLRPC_URL,
-                                data = payload,
-                                headers = {'Content-Type': 'application/xml'},
-                                auth = (settings.LAVA_USERNAME, settings.LAVA_PASSWORD),
-                                timeout = 100,
-                                stream = False)
+                                data=payload,
+                                headers={'Content-Type': 'application/xml'},
+                                auth=(settings.LAVA_USERNAME, settings.LAVA_PASSWORD),
+                                timeout=100,
+                                stream=False)
 
     if response.status_code == 200:
         try:
@@ -295,4 +293,3 @@ def testjobs_automatic_create(self, board_id, metadata):
         logger.info("TestJob %s deployed" % (test_job_id))
 
     SeenBuild.objects.create(board=board, gitcommit=metadata['commit'])
-
