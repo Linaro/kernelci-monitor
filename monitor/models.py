@@ -16,8 +16,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with KernelCI-monitor. If not, see <http://www.gnu.org/licenses/>.
 
-from django.db import models
+import yaml
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
+
+def validate_yaml(value):
+    try:
+        yaml.load(value)
+    except Exception as err:
+        raise ValidationError(
+            _('Not a valid YAML.\n%(err)s'),
+            params={'err': err},
+        )
 
 class KernelCIJob(models.Model):
     enabled = models.BooleanField(default=True)
@@ -48,8 +60,8 @@ class Board(models.Model):
         choices=ARCH_CHOICES,
         default=ARM64
     )
-    deploytemplate = models.TextField(null=True, blank=True)
-    boottemplate = models.TextField(null=True, blank=True)
+    deploytemplate = models.TextField(null=True, blank=True, validators=[validate_yaml])
+    boottemplate = models.TextField(null=True, blank=True, validators=[validate_yaml])
 
     def __str__(self):
         return "%s (%s)" % (self.kernelciname, self.arch)
