@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/mwasilew/kernelci-monitor.svg?branch=travis)](https://travis-ci.org/mwasilew/kernelci-monitor)
 # KernelCI-monitor
 
 This is a simple test job scheduler designed to work together with
