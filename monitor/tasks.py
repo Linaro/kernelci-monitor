@@ -263,7 +263,7 @@ def _submit_to_lava(testjobtemplate):
 
 
 def _notify_squadlistener(testjob, metadata):
-    squad_project = "%s/%s" % (metadata['job'].squad_project_name, metadata['commit'])
+    squad_project = "%s/%s" % (metadata['job'].squad_project_name, metadata['kernel'])
     lava_server = urlsplit(settings.LAVA_XMLRPC_URL)
     headers = {"Authorization": "Token %s" % settings.SQUADLISTENER_TOKEN}
     logger.debug("lava_server %s://%s" % (lava_server.scheme, lava_server.netloc))
